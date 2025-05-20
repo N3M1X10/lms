@@ -18,7 +18,7 @@ echo x - Close this batch file
 
 echo.&set /p option=Enter: 
 
-:: supported arguments check 
+:: supported flags check 
 ::exit right after function
 echo %option% | findstr /c:"-x">nul && (set exaf=1)
 
@@ -65,15 +65,13 @@ goto endfunc
 
 :lms-stop-server
 echo LMS Stop Server
-:: Проверяем, запущен ли процесс "LM Studio.exe"
+:: Checking whether the "LM Studio.exe" process is running
 tasklist | findstr /i "LM Studio.exe">nul
 if %errorlevel%==0 (
-    :: Если процесс запущен, выводим сообщение
     echo.
     set hasLMS=1
     echo [!time!] Process LM Studio.exe has found
 ) else (
-    :: Если процесс не запущен, выводим сообщение
     echo.
     set hasLMS=0
     echo [!time!] Process LM Studio.exe not found
@@ -87,64 +85,47 @@ goto endfunc
 
 
 :lms-load-one-model
-:: Проверяем, запущен ли процесс "LM Studio.exe"
-tasklist | findstr /i "LM Studio.exe">nul
-if %errorlevel%==0 (
-    :: Если процесс запущен, выводим сообщение
-    echo.
-    set hasLMS=1
-    echo [!time!] Process LM Studio.exe has found
-) else (
-    :: Если процесс не запущен, выводим сообщение
-    echo.
-    set hasLMS=0
-    echo [!time!] Process LM Studio.exe not found
-    echo No action was taken
-)
-if %hasLMS%==1 (
-    :: -s check (start local server)
-    echo %option% | findstr /c:"-s">nul && (
-        :: -p check (manually set port)
-        echo %option% | findstr /c:"-p">nul && (
-            :: enter value
-            :port_selection
-            echo [!time!] Manually Select the port
-            set /p server_port=Enter port: 
-            :: is this a num? check
-            set /a "num=0" && set /a "num=!server_port!"
-            if !num! equ 0 echo That's not a number &goto port_selection
-            cls
-        )
-        :: start server
-        if "!server_port!" neq "" (
-            echo Selected server port: !server_port!
-            lms server start -p !server_port!
-        ) else (
-            lms server start
-        )
+:: -s check (start local server)
+echo %option% | findstr /c:"-s">nul && (
+    :: -p check (manually set port)
+    echo %option% | findstr /c:"-p">nul && (
+        :: enter value
+        :port_selection
+        echo [!time!] Manually Select the port
+        set /p server_port=Enter port: 
+        :: is this a num? check
+        set /a "num=0" && set /a "num=!server_port!"
+        if !num! equ 0 echo That's not a number &goto port_selection
+        cls
     )
-
-    :: unload all models and load only one model
-    cls
-    echo [!time!] Unloading all models
-    lms unload --all
-    echo [!time!] Loading model
-    lms load
+    :: start server
+    if "!server_port!" neq "" (
+        echo Selected server port: !server_port!
+        lms server start -p !server_port!
+    ) else (
+        lms server start
+    )
 )
+
+:: unload all models and load only one model
+cls
+echo [!time!] Unloading all models
+lms unload --all
+echo [!time!] Loading model
+lms load
+
 goto endfunc
 
 
 :lms-unload-all-models
 echo LMS Unload All Models 
-:: Проверяем, запущен ли процесс "LM Studio.exe"
+:: Checking whether the "LM Studio.exe" process is running
 tasklist | findstr /i "LM Studio.exe">nul
 if %errorlevel%==0 (
-    :: Если процесс запущен, выводим сообщение
     echo.
     set hasLMS=1
     echo [!time!] Process LM Studio.exe has found
 ) else (
-    :: Если процесс не запущен, выводим сообщение
     echo.
     set hasLMS=0
     echo [!time!] Process LM Studio.exe not found
@@ -160,36 +141,34 @@ goto endfunc
 :lms-status
 echo LMS Status
 set exaf=0
-:: Проверяем, запущен ли процесс "LM Studio.exe"
+:: Checking whether the "LM Studio.exe" process is running
 tasklist | findstr /i "LM Studio.exe">nul
 if %errorlevel%==0 (
-    :: Если процесс запущен, выводим сообщение
-    echo.
-    echo [!time!] Process LM Studio.exe has found
-    echo [!time!] lms server status
+    echo.&echo [!time!] Process LM Studio.exe has found
+    echo.&echo [!time!] lms server status
     lms server status
-    echo No action was taken
+    echo.&echo [!time!] lms loaded models
+    lms ps
 ) else (
-    :: Если процесс не запущен, выводим сообщение
     echo.
     echo [!time!] Process LM Studio.exe not found
-    echo No action was taken
+    echo LM Studio currently not running
 )
+echo.
+echo No action was taken
 goto endfunc
 
 
 :lms-stop-all
 echo LMS Stop All
-:: Проверяем, запущен ли процесс "LM Studio.exe"
+:: Checking whether the "LM Studio.exe" process is running
 set process_name=LM Studio.exe
 tasklist | findstr /i "!process_name!">nul
 if %errorlevel%==0 (
-    :: Если процесс запущен, выводим сообщение
     echo.
     set hasLMS=1
     echo [!time!] Process LM Studio.exe has found
 ) else (
-    :: Если процесс не запущен, выводим сообщение
     echo.
     set hasLMS=0
     echo [!time!] Process LM Studio.exe not found
@@ -214,9 +193,9 @@ cls
 echo [101;93m[ Help Page ][0m
 echo.
 echo 1. Your first symbol in the Enter - are the function selection
-echo 2. This script supports arguments. You can enter them right after the function number. It's case-sensitive, but spaces are not needed
+echo 2. This script supports flags. You can enter them right after the function number. It's case-sensitive, but spaces are not needed
 echo.
-echo Arguments:
+echo Flags:
 echo.
 echo [93mAny command:[0m
 echo Use [-x] if need exit right after the function
@@ -225,7 +204,7 @@ echo [93m1. Start Server:[0m
 echo Use [-p] with "1" if need to manually set the local server port
 echo.
 echo [93m3. Load only one model:[0m
-echo Use [-s] with "3" if need to start local server
+echo Use [-s] with "3" if need to start local server in addition
 echo Use [-p] with "3" if need to manually set the local server port when using [-s]
 echo.
 echo [96mThis batch script is in process of developing. Please share your impressions and usage and leave feedback on Github.
@@ -247,4 +226,4 @@ endlocal&pause&cls&goto :ask
 :end
 endlocal&exit/b
 
-:: Source: https://github.com/N3M1X10
+:: Source: https://github.com/N3M1X10/lms
